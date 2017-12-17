@@ -21,12 +21,12 @@ public extension JSONSchema {
         case object(Object)
         case reference(Reference)
         
-        public init(from decoder: Decoder) throws {
+        struct EnumDecodingErrors: Error {
             
-            struct EnumDecodingErrors: Error {
-                
-                var errors = [Error]()
-            }
+            var errors = [Error]()
+        }
+        
+        public init(from decoder: Decoder) throws {
             
             var decodingErrors = EnumDecodingErrors()
             
@@ -94,6 +94,20 @@ public extension JSONSchema.Draft4 {
         private enum CodingKeys: String, CodingKey {
             
             case rawValue = "$ref"
+        }
+        
+        public init(from decoder: Decoder) throws {
+            
+            let singleValue = try decoder.singleValueContainer()
+            
+            self.rawValue = try singleValue.decode(RawValue.self)
+        }
+        
+        public func encode(to encoder: Encoder) throws {
+            
+            var singleValue = encoder.singleValueContainer()
+            
+            try singleValue.encode(rawValue)
         }
     }
 }
@@ -363,7 +377,7 @@ public extension JSONSchema.Draft4 {
      }
      ```
      */
-    public enum SimpleTypes: String {
+    public enum SimpleTypes: String, Codable {
         
         case object
         case array
@@ -428,14 +442,52 @@ public extension JSONSchema.Draft4 {
         case a(Bool) // { "type": "boolean" }
         case b(Indirect<Schema>) // { "$ref": "#" }
         
+        struct EnumDecodingErrors: Error {
+            
+            var errors = [Error]()
+        }
+        
         public init(from decoder: Decoder) throws {
             
+            var decodingErrors = EnumDecodingErrors()
             
+            do {
+                
+                let value = try Bool(from: decoder)
+                
+                self = .a(value)
+                
+                return
+            }
+                
+            catch {
+                
+                decodingErrors.errors.append(error)
+            }
+            
+            do {
+                
+                let value = try Schema(from: decoder)
+                
+                self = .b(Indirect(value))
+                
+                return
+            }
+                
+            catch {
+                
+                decodingErrors.errors.append(error)
+                
+                throw DecodingError.typeMismatch(AdditionalProperties.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: "Invalid raw value", underlyingError: decodingErrors))
+            }
         }
         
         public func encode(to encoder: Encoder) throws {
             
-            
+            switch self {
+            case let .a(value): try value.encode(to: encoder)
+            case let .b(value): try value.encode(to: encoder)
+            }
         }
         /*
         public static let `default`: AdditionalProperties = {
@@ -447,33 +499,115 @@ public extension JSONSchema.Draft4 {
     
     public enum Dependencies: Codable {
         
-        case a(Indirect<Schema>) // { "$ref": "#" }
-        case b(StringArray) // { "$ref": "#/definitions/stringArray" }
+        public typealias A = Indirect<Schema>
+        public typealias B = StringArray
+        
+        case a(A) // { "$ref": "#" }
+        case b(B) // { "$ref": "#/definitions/stringArray" }
+        
+        struct DecodingErrors: Error {
+            
+            var errors = [Error]()
+        }
         
         public init(from decoder: Decoder) throws {
             
+            var decodingErrors = DecodingErrors()
             
+            do {
+                
+                let value = try A(from: decoder)
+                
+                self = .a(value)
+                
+                return
+            }
+                
+            catch {
+                
+                decodingErrors.errors.append(error)
+            }
+            
+            do {
+                
+                let value = try B(from: decoder)
+                
+                self = .b(value)
+                
+                return
+            }
+                
+            catch {
+                
+                decodingErrors.errors.append(error)
+                
+                throw DecodingError.typeMismatch(AdditionalProperties.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: "Invalid raw value", underlyingError: decodingErrors))
+            }
         }
         
         public func encode(to encoder: Encoder) throws {
             
-            
+            switch self {
+            case let .a(value): try value.encode(to: encoder)
+            case let .b(value): try value.encode(to: encoder)
+            }
         }
     }
     
     public enum AdditionalItems: Codable {
         
-        case a(Bool) // { "type": "boolean" }
-        case b(Indirect<Schema>) // { "$ref": "#" }
+        public typealias A = Bool
+        public typealias B = Indirect<Schema>
+        
+        case a(A) // { "type": "boolean" }
+        case b(B) // { "$ref": "#" }
+        
+        struct DecodingErrors: Error {
+            
+            var errors = [Error]()
+        }
         
         public init(from decoder: Decoder) throws {
             
+            var decodingErrors = DecodingErrors()
             
+            do {
+                
+                let value = try A(from: decoder)
+                
+                self = .a(value)
+                
+                return
+            }
+                
+            catch {
+                
+                decodingErrors.errors.append(error)
+            }
+            
+            do {
+                
+                let value = try B(from: decoder)
+                
+                self = .b(value)
+                
+                return
+            }
+                
+            catch {
+                
+                decodingErrors.errors.append(error)
+                
+                throw DecodingError.typeMismatch(AdditionalProperties.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: "Invalid raw value", underlyingError: decodingErrors))
+            }
         }
         
         public func encode(to encoder: Encoder) throws {
             
-            
+            switch self {
+                case let .a(value): try value.encode(to: encoder)
+                case let .b(value): try value.encode(to: encoder)
+            }
         }
     }
     
@@ -490,24 +624,72 @@ public extension JSONSchema.Draft4 {
     */
     public enum Items: Codable {
         
-        case a(Indirect<Schema>) // { "$ref": "#" }
-        case b(SchemaArray) // { "$ref": "#/definitions/schemaArray" }
+        public typealias A = Indirect<Schema>
+        public typealias B = SchemaArray
+        
+        case a(A) // { "$ref": "#" }
+        case b(B) // { "$ref": "#/definitions/schemaArray" }
+        
+        struct DecodingErrors: Error {
+            
+            var errors = [Error]()
+        }
         
         public init(from decoder: Decoder) throws {
             
+            var decodingErrors = DecodingErrors()
             
+            do {
+                
+                let value = try A(from: decoder)
+                
+                self = .a(value)
+                
+                return
+            }
+                
+            catch {
+                
+                decodingErrors.errors.append(error)
+            }
+            
+            do {
+                
+                let value = try B(from: decoder)
+                
+                self = .b(value)
+                
+                return
+            }
+                
+            catch {
+                
+                decodingErrors.errors.append(error)
+                
+                throw DecodingError.typeMismatch(Items.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: "Invalid raw value", underlyingError: decodingErrors))
+            }
         }
         
         public func encode(to encoder: Encoder) throws {
             
-            
+            switch self {
+                case let .a(value): try value.encode(to: encoder)
+                case let .b(value): try value.encode(to: encoder)
+            }
         }
     }
     
     public enum ObjectType: Codable {
         
-        case a(SimpleTypes)
+        case a(A)
         case b(B)
+        
+        struct DecodingErrors: Error {
+            
+            var errors = [Error]()
+        }
+        
+        public typealias A = SimpleTypes
         
         public struct B: RawRepresentable, Codable {
             
@@ -544,12 +726,45 @@ public extension JSONSchema.Draft4 {
         
         public init(from decoder: Decoder) throws {
             
+            var decodingErrors = DecodingErrors()
             
+            do {
+                
+                let value = try A(from: decoder)
+                
+                self = .a(value)
+                
+                return
+            }
+                
+            catch {
+                
+                decodingErrors.errors.append(error)
+            }
+            
+            do {
+                
+                let value = try B(from: decoder)
+                
+                self = .b(value)
+                
+                return
+            }
+                
+            catch {
+                
+                decodingErrors.errors.append(error)
+                
+                throw DecodingError.typeMismatch(ObjectType.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: "Invalid raw value", underlyingError: decodingErrors))
+            }
         }
         
         public func encode(to encoder: Encoder) throws {
             
-            
+            switch self {
+            case let .a(value): try value.encode(to: encoder)
+            case let .b(value): try value.encode(to: encoder)
+            }
         }
     }
     
@@ -568,12 +783,21 @@ public extension JSONSchema.Draft4 {
         
         public init(from decoder: Decoder) throws {
             
+            let singleValue = try decoder.singleValueContainer()
             
+            let rawValue = try singleValue.decode(RawValue.self)
+            
+            guard let value = MultipleOf.init(rawValue: rawValue)
+                else { throw DecodingError.typeMismatch(RawValue.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: "Invalid raw value")) }
+            
+            self = value
         }
         
         public func encode(to encoder: Encoder) throws {
             
+            var singleValue = encoder.singleValueContainer()
             
+            try singleValue.encode(rawValue)
         }
     }
 }

@@ -37,6 +37,7 @@ public extension JSONSchema {
     
 }
 
+/// Reference storage for value types.
 public final class Indirect <T: Codable>: Codable {
     
     public let value: T
@@ -44,5 +45,21 @@ public final class Indirect <T: Codable>: Codable {
     public init(_ value: T) {
         
         self.value = value
+    }
+    
+    public init(from decoder: Decoder) throws {
+        
+        let singleValue = try decoder.singleValueContainer()
+        
+        let rawValue = try singleValue.decode(T.self)
+        
+        self.value = rawValue
+    }
+    
+    public func encode(to encoder: Encoder) throws {
+        
+        var singleValue = encoder.singleValueContainer()
+        
+        try singleValue.encode(value)
     }
 }
