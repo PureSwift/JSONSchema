@@ -121,7 +121,20 @@ extension JSON.Value: Decodable {
     
     public init(from decoder: Decoder) throws {
         
-        if decoder.
+        do {
+            
+            if try decoder.singleValueContainer().decodeNil() {
+                
+                self = .null
+                return
+            }
+            
+        } catch { }
+        
+        do {
+            
+            if decoder.container(keyedBy: <#T##CodingKey.Protocol#>)
+        }
     }
 }
 */

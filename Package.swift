@@ -10,6 +10,9 @@ let package = Package(
         .library(
             name: "JSONSchema",
             targets: ["JSONSchema"]),
+        .library(
+            name: "JSONSchemaSwiftGenerator",
+            targets: ["JSONSchemaSwiftGenerator"])
     ],
     dependencies: [
         // Dependencies declare other packages that this package depends on.
@@ -21,6 +24,9 @@ let package = Package(
         .target(
             name: "JSONSchema",
             dependencies: []),
+        .target(
+            name: "JSONSchemaSwiftGenerator",
+            dependencies: ["JSONSchema"]),
         .testTarget(
             name: "JSONSchemaTests",
             dependencies: ["JSONSchema"]),
