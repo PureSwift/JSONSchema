@@ -19,14 +19,11 @@ final class JSONSchemaTests: XCTestCase {
         
         catch {
             dump(error)
-            XCTFail("\(error)")
+            XCTFail()
             return
         }
-        
-        dump(scheme)
     }
-
-
+    
     
 }
 

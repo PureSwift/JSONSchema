@@ -21,14 +21,14 @@ public extension JSONSchema {
         case object(Object)
         case reference(Reference)
         
-        struct EnumDecodingErrors: Error {
+        struct DecodingErrors: Error {
             
             var errors = [Error]()
         }
         
         public init(from decoder: Decoder) throws {
             
-            var decodingErrors = EnumDecodingErrors()
+            var decodingErrors = DecodingErrors()
             
             do {
                 
@@ -184,17 +184,17 @@ public extension JSONSchema.Draft4 {
         
         public var description: String?
         
-        public var `default`: Indirect<Schema>? // Self
+        //public var `default`: JSON.Value? // typically {} or false
         
         public var multipleOf: Double? // minimum: 0, exclusiveMinimum: true
         
         public var maximum: Double?
         
-        public var exclusiveMaximum: Bool = false
+        public var exclusiveMaximum: Bool? // false
         
         public var minimum: Double?
         
-        public var exclusiveMinimum: Bool? // #### false
+        public var exclusiveMinimum: Bool? // false
         
         public var maxLength: PositiveInteger?
         
@@ -210,7 +210,7 @@ public extension JSONSchema.Draft4 {
         
         public var minItems: PositiveIntegerDefault0?
         
-        public var uniqueItems: Bool? // ### false
+        public var uniqueItems: Bool? // false
         
         public var maxProperties: PositiveInteger?
         
@@ -230,7 +230,7 @@ public extension JSONSchema.Draft4 {
         
         public var dependencies: [String: Dependencies]?
         
-        public var `enum`: [StringArray]? // "enum": { "type": "array", "minItems": 1, "uniqueItems": true }
+        public var `enum`: StringArray? // "enum": { "type": "array", "minItems": 1, "uniqueItems": true }
         
         public var allOf: SchemaArray? // { "$ref": "#/definitions/schemaArray" }
         
@@ -249,7 +249,7 @@ public extension JSONSchema.Draft4 {
             case schema = "$schema"
             case title = "title"
             case description = "description"
-            case `default` = "default"
+            //case `default` = "default"
             case multipleOf = "multipleOf"
             case maximum = "maximum"
             case exclusiveMaximum = "exclusiveMaximum"
@@ -283,7 +283,9 @@ public extension JSONSchema.Draft4 {
 
 // MARK: Definitions
 
-public extension JSONSchema.Draft4 {
+public extension JSONSchema.Draft4.Object {
+    
+    public typealias Schema = JSONSchema.Draft4
     
     /// ```JSON
     /// "schemaArray": {
@@ -343,6 +345,25 @@ public extension JSONSchema.Draft4 {
             
             self.rawValue = rawValue
         }
+        
+        public init(from decoder: Decoder) throws {
+            
+            let singleValue = try decoder.singleValueContainer()
+            
+            let rawValue = try singleValue.decode(RawValue.self)
+            
+            guard let value = PositiveInteger.init(rawValue: rawValue)
+                else { throw DecodingError.typeMismatch(RawValue.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: "Invalid raw value")) }
+            
+            self = value
+        }
+        
+        public func encode(to encoder: Encoder) throws {
+            
+            var singleValue = encoder.singleValueContainer()
+            
+            try singleValue.encode(rawValue)
+        }
     }
     
     /**
@@ -367,6 +388,25 @@ public extension JSONSchema.Draft4 {
         public init() {
             
             self.rawValue = 0
+        }
+        
+        public init(from decoder: Decoder) throws {
+            
+            let singleValue = try decoder.singleValueContainer()
+            
+            let rawValue = try singleValue.decode(RawValue.self)
+            
+            guard let value = PositiveIntegerDefault0.init(rawValue: rawValue)
+                else { throw DecodingError.typeMismatch(RawValue.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: "Invalid raw value")) }
+            
+            self = value
+        }
+        
+        public func encode(to encoder: Encoder) throws {
+            
+            var singleValue = encoder.singleValueContainer()
+            
+            try singleValue.encode(rawValue)
         }
     }
     
@@ -435,7 +475,7 @@ public extension JSONSchema.Draft4 {
 
 // MARK: Property definitions
 
-public extension JSONSchema.Draft4 {
+public extension JSONSchema.Draft4.Object {
     
     public enum AdditionalProperties : Codable {
         
@@ -788,6 +828,38 @@ public extension JSONSchema.Draft4 {
             let rawValue = try singleValue.decode(RawValue.self)
             
             guard let value = MultipleOf.init(rawValue: rawValue)
+                else { throw DecodingError.typeMismatch(RawValue.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: "Invalid raw value")) }
+            
+            self = value
+        }
+        
+        public func encode(to encoder: Encoder) throws {
+            
+            var singleValue = encoder.singleValueContainer()
+            
+            try singleValue.encode(rawValue)
+        }
+    }
+    
+    public struct Enum: RawRepresentable, Codable /*, Equatable */ {
+        
+        public let rawValue: [String]
+        
+        public init?(rawValue: [String]) {
+            
+            guard rawValue.count >= 1
+                else { return nil }
+            
+            self.rawValue = rawValue
+        }
+        
+        public init(from decoder: Decoder) throws {
+            
+            let singleValue = try decoder.singleValueContainer()
+            
+            let rawValue = try singleValue.decode(RawValue.self)
+            
+            guard let value = Enum.init(rawValue: rawValue)
                 else { throw DecodingError.typeMismatch(RawValue.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: "Invalid raw value")) }
             
             self = value
