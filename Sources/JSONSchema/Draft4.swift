@@ -12,19 +12,50 @@ public extension JSONSchema {
     /// Core schema meta-schema
     ///
     /// [Draft 04](http://json-schema.org/draft-04/schema#)
-    public struct Draft4: Codable /*, Equatable */ {
+    public enum Draft4: Codable {
         
         public static let type: SchemaType = .draft4
+        
+        case bool(Bool)
+        case object(Object)
+        
+        public init(from decoder: Decoder) throws {
+            
+            if let bool = try? Bool.init(from: decoder) {
+                
+                self = .bool(bool)
+                
+            } else if let object = try? Object.init(from: decoder) {
+             
+                self = .object(object)
+                
+            } else {
+                
+                throw DecodingError.typeMismatch(Draft4.self, DecodingError.Context.init(codingPath: decoder.codingPath, debugDescription: "Invalid raw value"))
+            }
+        }
+        
+        public func encode(to encoder: Encoder) throws {
+            
+            switch self {
+            case let .bool(value): try value.encode(to: encoder)
+            case let .object(value): try value.encode(to: encoder)
+            }
+        }
+    }
+}
+
+public extension JSONSchema.Draft4 {
+    
+    public struct Object: Codable /*, Equatable */ {
         
         public var identifier: URL?
         
         public var schema: SchemaType? // should only be draft-04
-        
-        public var required: [String]
-        
+                
         public var reference: String?
         
-        public var type: ValueType?
+        public var type: SimpleTypes?
         
         public var title: String?
         
@@ -85,9 +116,9 @@ public extension JSONSchema {
         public var oneOf: SchemaArray? // { "$ref": "#/definitions/schemaArray" }
         
         public var not: Indirect<Schema> // { "$ref": "#" }
-                
+        
         private enum CodingKeys: String, CodingKey {
-            case ref = "$ref"
+            
             case type = "type"
             case id = "id"
             case schema = "$schema"
@@ -127,13 +158,33 @@ public extension JSONSchema {
 
 // MARK: - Supporting Types
 
-public protocol
+// MARK: BuiltIn
 
 public extension JSONSchema.Draft4 {
     
     public typealias Schema = JSONSchema.Draft4
     
     public typealias SchemaType = JSONSchema
+    
+    public struct Reference: RawRepresentable, Codable {
+        
+        public var rawValue: URL
+        
+        public init(rawValue: URL) {
+            
+            self.rawValue = rawValue
+        }
+        
+        private enum CodingKeys: String, CodingKey {
+            
+            case rawValue = "$ref"
+        }
+    }
+}
+
+// MARK: Definitions
+
+public extension JSONSchema.Draft4 {
     
     /// ```JSON
     /// "schemaArray": {
@@ -161,7 +212,7 @@ public extension JSONSchema.Draft4 {
             let rawValue = try singleValue.decode(RawValue.self)
             
             guard let value = SchemaArray.init(rawValue: rawValue)
-                else { throw DecodingError.typeMismatch(RawValue.self, DecodingError.Context.init(codingPath: decoder.codingPath, debugDescription: "Invalid raw value")) }
+                else { throw DecodingError.typeMismatch(RawValue.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: "Invalid raw value")) }
             
             self = value
         }
@@ -197,7 +248,9 @@ public extension JSONSchema.Draft4 {
     
     /**
      ```JSON
-     
+     "positiveIntegerDefault0": {
+     "allOf": [ { "$ref": "#/definitions/positiveInteger" }, { "default": 0 } ]
+     }
      ```
     */
     public struct PositiveIntegerDefault0: RawRepresentable, Codable {
@@ -223,7 +276,53 @@ public extension JSONSchema.Draft4 {
         case null
     }
     
-    public
+    /**
+     ```JSON
+     "stringArray": {
+     "type": "array",
+     "items": { "type": "string" },
+     "minItems": 1,
+     "uniqueItems": true
+     }
+     ```
+     */
+    public struct StringArray: RawRepresentable, Codable {
+        
+        public let rawValue: [String]
+        
+        public init?(rawValue: [String]) {
+            
+            guard rawValue.count >= 1
+                else { return nil }
+            
+            self.rawValue = rawValue
+        }
+        
+        public init(from decoder: Decoder) throws {
+            
+            let singleValue = try decoder.singleValueContainer()
+            
+            let rawValue = try singleValue.decode(RawValue.self)
+            
+            guard let value = StringArray.init(rawValue: rawValue)
+                else { throw DecodingError.typeMismatch(RawValue.self, DecodingError.Context(codingPath: decoder.codingPath, debugDescription: "Invalid raw value")) }
+            
+            self = value
+        }
+        
+        public func encode(to encoder: Encoder) throws {
+            
+            var singleValue = encoder.singleValueContainer()
+            
+            try singleValue.encode(rawValue)
+        }
+    }
+    
+}
+
+// MARK: Property definitions
+
+public extension JSONSchema.Draft4 {
     
     public enum AdditionalProperties : Codable {
         
@@ -239,6 +338,12 @@ public extension JSONSchema.Draft4 {
             
             
         }
+        
+        public static let `default`: AdditionalProperties = {
+            
+            
+            
+        }()
     }
     
     public enum Dependencies : Codable {
@@ -257,15 +362,5 @@ public extension JSONSchema.Draft4 {
         }
     }
     
-    public enum ValueType: String {
-        
-        case object
-        case array
-        case string
-        case integer
-        case number
-        case boolean
-        case null
-    }
 }
 
