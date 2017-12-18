@@ -197,7 +197,7 @@ public extension JSONSchema.Draft4 {
         
         public init() { }
         
-        private enum CodingKeys: String, CodingKey {
+        internal enum CodingKeys: String, CodingKey {
             
             case type = "type"
             case identifier = "id"
@@ -834,9 +834,33 @@ public extension JSONSchema.Draft4.Object {
 
 // MARK: - Extensions
 
+// MARK: Subscriptins
+
 public extension JSONSchema.Draft4.Object {
     
-    public func resolveReferences() throws {
+    public enum ReferencePath: String {
+        
+        case definitions
+        case properties
+    }
+    
+    public subscript (path: ReferencePath) -> [String: Schema.Object] {
+        
+        fatalError()
+    }
+}
+
+// MARK: Reference Resolving
+
+public extension JSONSchema.Draft4.Object {
+    
+    public enum ReferenceResolverError {
+        
+        // Could not resolve reference
+        case invalid(Reference)
+    }
+    
+    public func resolveReferences() throws -> [Reference: Schema.Object] {
         
         typealias Object = Schema.Object
         
@@ -847,11 +871,11 @@ public extension JSONSchema.Draft4.Object {
         let references = self.allReferences
         
         // get all enclosing "parent" schemas for all references
-        let childReferencesArray = try references.map { (reference) -> (Reference, Object) in
+        let referencesByParentSchema = try references.map { (reference) -> (Reference, Object) in
             
             let schemaObject: Object
             
-            // fetch remote reference and get
+            // fetch remote reference and get schema
             if let remoteURL = reference.remote {
                 
                 let jsonData = try Data(contentsOf: remoteURL)
@@ -862,19 +886,27 @@ public extension JSONSchema.Draft4.Object {
                 
             } else {
                 
-                // resolved using local schema
+                // parent schema is self
                 schemaObject = self
             }
             
             return (reference, schemaObject)
         }
         
-        let childReferences = Dictionary(uniqueKeysWithValues: childReferences)
+        // reserve buffer for new entries
+        resolvedReferences.reserveCapacity(resolvedReferences.count + referencesByParentSchema.count)
         
+        // resolve all references using their parent schema
+        for (reference, parentSchema) in referencesByParentSchema {
+            
+            guard let resolvedSchema = parentSchema[reference.path]
+                else { throw ReferenceResolverError.invalid(reference) }
+            
+            
+        }
         
-        
-        // resolve all references
-        
+        // return value
+        return resolvedReferences
     }
 }
 
@@ -893,10 +925,10 @@ public extension JSONSchema.Draft4.Object {
     
     public var allReferences: Set<Reference> {
         
-        var references = Set<Reference>()
+        var references = [Reference]()
         
         // get references in schema
-        references += definitions?.values.reduce(Set<Reference>()) { $0 + $1.allReferences } ?? []
+        references += definitions?.values.reduce([Reference]()) { $0 + $1.allReferences } ?? []
         references += properties?.values.reduce([Reference]()) { $0 + $1.allReferences } ?? []
         references += patternProperties?.values.reduce([Reference]()) { $0 + $1.allReferences } ?? []
         references += dependencies?.values.reduce([Reference]()) { $0 + $1.allReferences } ?? []
@@ -906,7 +938,7 @@ public extension JSONSchema.Draft4.Object {
         references += oneOf?.rawValue.reduce([Reference]()) { $0 + $1.allReferences } ?? []
         references += not?.value.allReferences ?? []
         
-        return references
+        return Set(references)
     }
 }
 
