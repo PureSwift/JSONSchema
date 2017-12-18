@@ -7,6 +7,60 @@ final class JSONSchemaTests: XCTestCase {
         ("testDraft4MetaSchemaParse", testDraft4MetaSchemaParse),
         ]
     
+    func testReference() {
+        
+        // invalid strings
+        do {
+            
+            XCTAssertNil(Reference(rawValue: ""))
+            XCTAssertNil(Reference(rawValue: "/"))
+            XCTAssertNil(Reference(rawValue: "https://google.com"))
+            XCTAssertNil(Reference(rawValue: "http://json-schema.org/draft-04/schema"))
+            XCTAssertNil(Reference(rawValue: "http://json-schema.org/draft-04/schema"))
+            XCTAssertNil(Reference(rawValue: "/definitions/schemaArray"))
+        }
+        
+        do {
+            
+            let rawValue = "#"
+            
+            guard let reference = Reference(rawValue: rawValue)
+                else { XCTFail("Could not parse"); return }
+            
+            XCTAssert(reference.path.isEmpty)
+            XCTAssert(reference.remote == nil)
+            XCTAssert(reference == .selfReference)
+            XCTAssert(reference.rawValue == Reference.selfReference.rawValue)
+        }
+        
+        do {
+            let rawValue = "http://json-schema.org/draft-04/schema#/properties/title"
+            
+            guard let reference = Reference(rawValue: rawValue)
+                else { XCTFail("Could not parse"); return }
+            
+            XCTAssert(reference.rawValue == rawValue)
+            XCTAssert(reference.path == ["properties", "title"])
+            XCTAssert(reference.remote?.absoluteString == "http://json-schema.org/draft-04/schema")
+            XCTAssert(reference != .selfReference)
+            XCTAssert(reference == "http://json-schema.org/draft-04/schema#/properties/title")
+        }
+        
+        do {
+            
+            let rawValue = "#/definitions/schemaArray"
+            
+            guard let reference = Reference(rawValue: rawValue)
+                else { XCTFail("Could not parse"); return }
+            
+            XCTAssert(reference.rawValue == rawValue)
+            XCTAssert(reference.path == ["definitions", "schemaArray"])
+            XCTAssert(reference.remote == nil)
+            XCTAssert(reference != .selfReference, "\(reference)")
+            XCTAssert(reference == "#/definitions/schemaArray")
+        }
+    }
+    
     func testDraft4MetaSchemaParse() {
         
         let jsonDecoder = JSONDecoder()
@@ -22,9 +76,9 @@ final class JSONSchemaTests: XCTestCase {
             XCTFail()
             return
         }
-    }
-    
-    
+        
+        dump(scheme)
+    }    
 }
 
 let draft4SchemeJSON = """

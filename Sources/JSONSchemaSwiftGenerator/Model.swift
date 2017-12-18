@@ -35,7 +35,6 @@ public protocol SwiftMember {
     
     var memberType: SwiftMemberType { get }
     
-    var 
 }
 
 public struct SwiftEnumCase {

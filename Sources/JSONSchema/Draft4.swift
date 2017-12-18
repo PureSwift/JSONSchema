@@ -16,7 +16,7 @@ public extension JSONSchema {
     /// [Validation](http://json-schema.org/draft-04/json-schema-validation.html)
     public enum Draft4: Codable {
         
-        public static let type: SchemaType = .draft4
+        public static var type: SchemaType { return .draft4 }
         
         case object(Object)
         case reference(Reference)
@@ -80,91 +80,40 @@ public extension JSONSchema.Draft4 {
     public typealias SchemaType = JSONSchema
 }
 
-public extension JSONSchema.Draft4 {
+public extension Format {
     
-    public struct Reference: RawRepresentable, Codable {
-        
-        public var rawValue: URL
-        
-        public init(rawValue: URL) {
-            
-            self.rawValue = rawValue
-        }
-        
-        private enum CodingKeys: String, CodingKey {
-            
-            case rawValue = "$ref"
-        }
-        
-        public init(from decoder: Decoder) throws {
-            
-            let singleValue = try decoder.singleValueContainer()
-            
-            self.rawValue = try singleValue.decode(RawValue.self)
-        }
-        
-        public func encode(to encoder: Encoder) throws {
-            
-            var singleValue = encoder.singleValueContainer()
-            
-            try singleValue.encode(rawValue)
-        }
-    }
-}
-
-public extension JSONSchema.Draft4 {
-    
-    /**
-     Structural validation alone may be insufficient to validate that an instance meets all the requirements of an application. The "format" keyword is defined to allow interoperable semantic validation for a fixed subset of values which are accurately described by authoritative resources, be they RFCs or other external specifications.
-     
-     The value of this keyword is called a format attribute. It MUST be a string. A format attribute can generally only validate a given set of instance types. If the type of the instance to validate is not in this set, validation for this format attribute and instance SHOULD succeed.
-    */
-    public struct Format: RawRepresentable, Codable {
-        
-        public var rawValue: String
-        
-        public init(rawValue: String) {
-            
-            self.rawValue = rawValue
-        }
+    /// JSON Scheme Draft-04 definitions
+    public struct Draft4 {
         
         /**
          A string instance is valid against this attribute if it is a valid date representation as defined by [RFC 3339, section 5.6](http://json-schema.org/draft-04/json-schema-validation.html#RFC3339) [RFC3339].
-        */
-        public static let dateTime: Format = "date-time"
+         */
+        public static var dateTime: Format { return "date-time" }
         
         /**
          A string instance is valid against this attribute if it is a valid Internet email address as defined by [RFC 5322, section 3.4.1](http://json-schema.org/draft-04/json-schema-validation.html#RFC5322) [RFC5322].
-        */
-        public static let email: Format = "email"
+         */
+        public static var email: Format { return "email" }
         
         /**
          A string instance is valid against this attribute if it is a valid representation for an Internet host name, as defined by RFC 1034, section 3.1 [RFC1034].
-        */
-        public static let hostname: Format = "hostname"
+         */
+        public static var hostname: Format { return "hostname" }
         
         /**
          A string instance is valid against this attribute if it is a valid representation of an IPv4 address according to the "dotted-quad" ABNF syntax as defined in RFC 2673, section 3.2 [RFC2673].
          */
-        public static let ipv4: Format = "ipv4"
+        public static var ipv4: Format { return "ipv4" }
         
         /**
          A string instance is valid against this attribute if it is a valid representation of an IPv6 address as defined in RFC 2373, section 2.2 [RFC2373].
-        */
-        public static let ipv6: Format = "ipv6"
+         */
+        public static var ipv6: Format { return "ipv6" }
         
         /**
          A string instance is valid against this attribute if it is a valid URI, according to [[RFC3986]](http://json-schema.org/draft-04/json-schema-validation.html#RFC3986).
-        */
-        public static let uri: Format = "uri"
-    }
-}
-
-extension JSONSchema.Draft4.Format: ExpressibleByStringLiteral {
-    
-    public init(stringLiteral value: String) {
-        
-        self.rawValue = value
+         */
+        public static var uri: Format { return "uri" }
     }
 }
 
@@ -185,6 +134,8 @@ public extension JSONSchema.Draft4 {
         public var description: String?
         
         //public var `default`: JSON.Value? // typically {} or false
+        
+        public var format: Format? // not in official schema
         
         public var multipleOf: Double? // minimum: 0, exclusiveMinimum: true
         
@@ -277,6 +228,8 @@ public extension JSONSchema.Draft4 {
             case anyOf = "anyOf"
             case oneOf = "oneOf"
             case not = "not"
+            
+            case format
         }
     }
 }
