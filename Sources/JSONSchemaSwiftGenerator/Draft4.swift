@@ -39,16 +39,7 @@ public extension JSONSchema.Draft4 {
             indentationLevel = indent ? indentationLevel + 1 : indentationLevel - 1
         }
         
-        public func resolveReferences() throws {
-            
-            // initialize with self
-            resolvedReferences = [.selfReference: schema]
-            
-            // scan schema for references
-            var references = [Reference]()
-            
-            
-        }
+        
     }
 
 }

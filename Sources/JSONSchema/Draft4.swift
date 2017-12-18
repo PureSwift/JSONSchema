@@ -83,6 +83,8 @@ public extension JSONSchema.Draft4 {
 public extension Format {
     
     /// JSON Scheme Draft-04 definitions
+    ///
+    /// [Draft](http://json-schema.org/draft-04/json-schema-validation.html#rfc.section.7.3)
     public struct Draft4 {
         
         /**
@@ -114,6 +116,8 @@ public extension Format {
          A string instance is valid against this attribute if it is a valid URI, according to [[RFC3986]](http://json-schema.org/draft-04/json-schema-validation.html#RFC3986).
          */
         public static var uri: Format { return "uri" }
+        
+        public static let formats: [Format] = [dateTime, email, hostname, ipv4, ipv6, uri]
     }
 }
 
@@ -229,6 +233,7 @@ public extension JSONSchema.Draft4 {
             case oneOf = "oneOf"
             case not = "not"
             
+            // not in official JSON meta schema
             case format
         }
     }
@@ -827,3 +832,91 @@ public extension JSONSchema.Draft4.Object {
     }
 }
 
+// MARK: - Extensions
+
+public extension JSONSchema.Draft4.Object {
+    
+    public func resolveReferences() throws {
+        
+        typealias Object = Schema.Object
+        
+        // initialize with self
+        var resolvedReferences: [Reference: Object] = [.selfReference: self]
+        
+        // scan schema for references
+        let references = self.allReferences
+        
+        // get all enclosing "parent" schemas for all references
+        let childReferencesArray = try references.map { (reference) -> (Reference, Object) in
+            
+            let schemaObject: Object
+            
+            // fetch remote reference and get
+            if let remoteURL = reference.remote {
+                
+                let jsonData = try Data(contentsOf: remoteURL)
+                
+                let jsonDecoder = JSONDecoder()
+                
+                schemaObject = try jsonDecoder.decode(Object.self, from: jsonData)
+                
+            } else {
+                
+                // resolved using local schema
+                schemaObject = self
+            }
+            
+            return (reference, schemaObject)
+        }
+        
+        let childReferences = Dictionary(uniqueKeysWithValues: childReferences)
+        
+        
+        
+        // resolve all references
+        
+    }
+}
+
+public extension JSONSchema.Draft4 {
+    
+    public var allReferences: Set<Reference> {
+        
+        switch self {
+        case let .object(object): return object.allReferences
+        case let .reference(reference): return [reference]
+        }
+    }
+}
+
+public extension JSONSchema.Draft4.Object {
+    
+    public var allReferences: Set<Reference> {
+        
+        var references = Set<Reference>()
+        
+        // get references in schema
+        references += definitions?.values.reduce(Set<Reference>()) { $0 + $1.allReferences } ?? []
+        references += properties?.values.reduce([Reference]()) { $0 + $1.allReferences } ?? []
+        references += patternProperties?.values.reduce([Reference]()) { $0 + $1.allReferences } ?? []
+        references += dependencies?.values.reduce([Reference]()) { $0 + $1.allReferences } ?? []
+        references += properties?.values.reduce([Reference]()) { $0 + $1.allReferences } ?? []
+        references += allOf?.rawValue.reduce([Reference]()) { $0 + $1.allReferences } ?? []
+        references += anyOf?.rawValue.reduce([Reference]()) { $0 + $1.allReferences } ?? []
+        references += oneOf?.rawValue.reduce([Reference]()) { $0 + $1.allReferences } ?? []
+        references += not?.value.allReferences ?? []
+        
+        return references
+    }
+}
+
+public extension JSONSchema.Draft4.Object.Dependencies {
+    
+    public var allReferences: Set<Reference> {
+        
+        switch self {
+        case let .a(a): return a.value.allReferences
+        case .b: return []
+        }
+    }
+}
