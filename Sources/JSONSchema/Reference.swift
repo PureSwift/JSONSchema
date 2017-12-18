@@ -63,28 +63,17 @@ extension Reference: RawRepresentable {
             self.path = []
         }
         
-        let components = rawValue.components(separatedBy: "#")
-        
-        guard components.count == 2
-            else { return nil }
-        
-        let remoteURLString = components[0]
-        let pathString = components[1]
-        
-        // parse remote url
-        if remoteURLString.isEmpty == false {
+        if referenceURL.host != nil {
             
-            guard let url = URL(string: remoteURLString)
-                else { return nil }
+            var remoteURL = referenceURL
+            remoteURL.fragment = nil
             
-            self.remote = url
+            self.remote = remoteURL.url
             
         } else {
             
             self.remote = nil
         }
-        
-        // parse path
         
     }
     
