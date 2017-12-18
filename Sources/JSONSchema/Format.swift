@@ -20,6 +20,16 @@ public struct Format: RawRepresentable, Codable {
     }
 }
 
+// MARK: - CustomStringConvertible
+
+extension Format: CustomStringConvertible {
+    
+    public var description: String {
+        
+        return rawValue
+    }
+}
+
 // MARK: - ExpressibleByStringLiteral
 
 extension Format: ExpressibleByStringLiteral {
@@ -49,5 +59,3 @@ extension Format: Hashable {
         return rawValue.hashValue
     }
 }
-
-// MARK: -

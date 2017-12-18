@@ -234,7 +234,7 @@ public extension JSONSchema.Draft4 {
             case not = "not"
             
             // not in official JSON meta schema
-            case format
+            case format = "format"
         }
     }
 }
@@ -838,15 +838,29 @@ public extension JSONSchema.Draft4.Object {
 
 public extension JSONSchema.Draft4.Object {
     
-    public enum ReferencePath: String {
+    public enum ReferenceKey: String {
         
         case definitions
         case properties
     }
     
-    public subscript (path: ReferencePath) -> [String: Schema.Object] {
+    public subscript (path: ReferenceKey) -> [String: Schema] {
         
-        fatalError()
+        switch path {
+        case .definitions: return definitions ?? [:]
+        case .properties: return properties ?? [:]
+        }
+    }
+    
+    public subscript (path: [String]) -> Schema? {
+        
+        guard path.count == 2,
+            let referenceKey = ReferenceKey(rawValue: path[0])
+            else { return nil }
+        
+        let definitionName = path[1]
+        
+        return self[referenceKey][definitionName]
     }
 }
 
@@ -854,7 +868,7 @@ public extension JSONSchema.Draft4.Object {
 
 public extension JSONSchema.Draft4.Object {
     
-    public enum ReferenceResolverError {
+    public enum ReferenceResolverError: Error {
         
         // Could not resolve reference
         case invalid(Reference)
@@ -899,10 +913,11 @@ public extension JSONSchema.Draft4.Object {
         // resolve all references using their parent schema
         for (reference, parentSchema) in referencesByParentSchema {
             
-            guard let resolvedSchema = parentSchema[reference.path]
+            guard let foundSchema = parentSchema[reference.path],
+                case let .object(resolvedSchema) = foundSchema
                 else { throw ReferenceResolverError.invalid(reference) }
             
-            
+            resolvedReferences[reference] = resolvedSchema
         }
         
         // return value
