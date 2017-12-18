@@ -54,10 +54,9 @@ extension Reference: RawRepresentable {
             else { return nil }
         
         // parse path
-        if let fragmentURL = URL(string: fragment),
-            fragmentURL.pathComponents.count > 1 {
+        if let fragmentURL = URL(string: fragment) {
             
-            self.path = [String](fragmentURL.pathComponents.suffix(from: 1)) // omit "/"
+            self.path = fragmentURL.pathComponents.filter { $0 != "/" && $0.isEmpty == false }
             
         } else {
             
@@ -99,7 +98,7 @@ extension Reference: RawRepresentable {
             url = remoteURLComponents
         }
         
-        url.fragment = self.path.reduce("") { $0.isEmpty ? "" : "/" + $1 }
+        url.fragment = self.path.reduce("") { $0 + "/" + $1 }
         
         return url.string ?? ""
     }

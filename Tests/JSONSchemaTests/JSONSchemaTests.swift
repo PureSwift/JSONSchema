@@ -27,6 +27,7 @@ final class JSONSchemaTests: XCTestCase {
             guard let reference = Reference(rawValue: rawValue)
                 else { XCTFail("Could not parse"); return }
             
+            XCTAssert(reference.rawValue == rawValue, "\(reference.rawValue)")
             XCTAssert(reference.path.isEmpty)
             XCTAssert(reference.remote == nil)
             XCTAssert(reference == .selfReference)
@@ -39,7 +40,7 @@ final class JSONSchemaTests: XCTestCase {
             guard let reference = Reference(rawValue: rawValue)
                 else { XCTFail("Could not parse"); return }
             
-            XCTAssert(reference.rawValue == rawValue)
+            XCTAssert(reference.rawValue == rawValue, "\(reference.rawValue)")
             XCTAssert(reference.path == ["properties", "title"])
             XCTAssert(reference.remote?.absoluteString == "http://json-schema.org/draft-04/schema")
             XCTAssert(reference != .selfReference)
@@ -53,7 +54,7 @@ final class JSONSchemaTests: XCTestCase {
             guard let reference = Reference(rawValue: rawValue)
                 else { XCTFail("Could not parse"); return }
             
-            XCTAssert(reference.rawValue == rawValue)
+            XCTAssert(reference.rawValue == rawValue, "\(reference.rawValue)")
             XCTAssert(reference.path == ["definitions", "schemaArray"])
             XCTAssert(reference.remote == nil)
             XCTAssert(reference != .selfReference, "\(reference)")
